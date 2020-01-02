@@ -1,8 +1,8 @@
 package xyz.st.meethere.controller;
 
 import io.swagger.annotations.ApiOperation;
-import io.swagger.models.auth.In;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.st.meethere.entity.Ground;
@@ -28,6 +28,7 @@ public class GroundController {
     GroundService groundService;
     final
     FileService fileService;
+    Logger logger = LoggerFactory.getLogger(getClass());
 
     public GroundController(GroundService groundService, FileService fileService) {
         this.groundService = groundService;
@@ -94,14 +95,12 @@ public class GroundController {
             storeFile = fileService.storeFile(file);
             ground.setPhoto(storeFile);
         } catch (FileException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         int result = groundService.addGround(ground);
         ResponseMsg responseMsg = new ResponseMsg();
         if (result == 1)
             responseMsg.setStatus(200);
-        else
-            responseMsg.setStatus(500);
         responseMsg.getResponseMap().put("result", ground);
         return responseMsg;
     }
@@ -174,7 +173,7 @@ public class GroundController {
     }
 
     @ResponseBody
-    @ApiOperation("通过groundId批量删除新闻")
+    @ApiOperation("通过groundId批量删除场馆")
     @DeleteMapping("/ground/deleteByBatch")
     ResponseMsg deleteGroundByBatch(@RequestBody Map<String, List<Integer>> data) {
         ResponseMsg msg = new ResponseMsg();
@@ -202,7 +201,7 @@ public class GroundController {
     @ApiOperation("通过搜索返回对应ground")
     @PostMapping("/ground/match")
 //        TODO: 感觉这些逻辑都应该在Service层里面，而不是在Controller里
-    ResponseMsg getGroundByMatch(@RequestBody Map<String,String> params) {
+    ResponseMsg getGroundByMatch(@RequestBody Map<String, String> params) {
         String searchParam = params.get("match");
         if (searchParam.equals("")) {
             return getAllGroundsInfo();
@@ -215,9 +214,10 @@ public class GroundController {
             for (String id : ids) {
                 retGround.add(groundService.getGroundById(Integer.valueOf(id.trim())));
             }
-            if (retGround.size() == 0)
-                responseMsg.setStatus(404);
-            responseMsg.getResponseMap().put("result",retGround);
+//            这里根本就不可能是0，null也会被添加进去的
+//            if (retGround.size() == 0)
+//                responseMsg.setStatus(404);
+            responseMsg.getResponseMap().put("result", retGround);
             return responseMsg;
         } else {
             List<Ground> grounds = groundService.getGroundsByMatch(searchParam);

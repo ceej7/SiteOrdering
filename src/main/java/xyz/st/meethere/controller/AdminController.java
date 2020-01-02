@@ -21,19 +21,6 @@ public class AdminController {
         this.fileService = fileService;
     }
 
-//    @ResponseBody
-//    @ApiOperation("通过userName查找管理员")
-//    @GetMapping("/admin/getByName")
-//    ResponseMsg getUserByName(@RequestParam("userName") String userName){
-//        ResponseMsg msg = new ResponseMsg();msg.setStatus(404);
-//        User user = adminService.getAdminByName(userName);
-//        if(user != null){
-//            msg.setStatus(200);
-//        }
-//        msg.getResponseMap().put("result",user);
-//        return msg;
-//    }
-
     @ResponseBody
     @ApiOperation("通过userId查找管理员")
     @GetMapping("/admin/getById")
@@ -56,7 +43,12 @@ public class AdminController {
         msg.setStatus(404);
         boolean isPwdCorrect = adminService.checkAdminPassword(userName, password);
         if (isPwdCorrect) {
-            msg.setStatus(200);
+            User user = adminService.getAdminByName(userName);
+            if (user != null) {
+                msg.setStatus(200);
+            }
+            msg.getResponseMap().put("result", user);
+            return msg;
         }
         return msg;
     }
@@ -65,48 +57,36 @@ public class AdminController {
     @ApiOperation("修改管理员信息，使用userId识别管理员")
     @PostMapping("/admin/updateById")
 //    FIXME:参数接受的方法最好改成PathVariable或者RequestParam
-    ResponseMsg updateById(@RequestBody Map<String, Integer> params) {
+    ResponseMsg updateById(@RequestBody Map params) {
         ResponseMsg msg = new ResponseMsg();
 //        FIXME:参数传递错误返回400
         msg.setStatus(400);
-        if (!(params.containsKey("userId"))) {
+
+        if (
+                (!(params.containsKey("userId"))||!(params.containsKey("password")))
+                        &&
+                        (!(params.containsKey("userId")) || !(params.containsKey("email")) || !(params.containsKey("description")))
+        )
+        {
             return msg;
         }
-        User user = adminService.getAdminById(params.get("userId"));
+
+        User user = adminService.getAdminById(Integer.parseInt((params.get("userId").toString())));
         if (user == null) {
             msg.setStatus(404);
             return msg;
         }
-        ;
         user.updateUser(params);
         int ret = adminService.updateAdminByModel(user);
         if (ret > 0) {
             msg.setStatus(200);
             //        FIXME: 统一返回值名称
             msg.getResponseMap().put("user", user);
+        } else {
+            msg.setStatus(500);
         }
         return msg;
     }
-
-//    @ResponseBody
-//    @ApiOperation("修改管理员信息，使用userName识别管理员")
-//    @PostMapping("/admin/updateByName")
-//    ResponseMsg updateByName(@RequestBody Map params){
-//        ResponseMsg msg = new ResponseMsg();
-//        msg.setStatus(404);
-//        if(!(params.containsKey("userName"))){
-//            return msg;
-//        }
-//        User user=adminService.getAdminByName((String)params.get("userName"));
-//        if(user==null) return msg;
-//        user.updateUser(params);
-//        int ret = adminService.updateAdminByModel(user);
-//        if(ret>0) {
-//            msg.setStatus(200);
-//            msg.getResponseMap().put("user",user);
-//        }
-//        return msg;
-//    }
 
     /*
      * 个人信息头像管理

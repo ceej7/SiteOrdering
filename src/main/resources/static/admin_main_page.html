@@ -104,7 +104,7 @@
 
 <script type="text/javascript" src="js/jquery.cookie.js"></script>
 <!--处理退出操作，跳转到登陆界面.   要放在jquery包后面，因为有依赖关系-->
-<script type="text/javascript" src="js/logout.js"></script>
+<script type="text/javascript" src="js/getLogout.js"></script>
 <!--获取网站根目录的js-->
 <script type="text/javascript" src="js/getRootPath.js"></script>
 <script type="text/javascript">
@@ -116,18 +116,18 @@
 
             var baseUrl =getRootPath_web();
 
-            if (!$.cookie('userName')) {
+            if (!$.cookie('userId')) {
                 /*没有登陆，请先登陆*/
                 $(window).attr('location', baseUrl);
             } else {
                 /*如果这个用户是一个普通用户，那么就要跳转到登陆界面*/
                 /*如果是管理员，那么才可以进入这个界面*/
-                var name = $.cookie('userName');
+                var id = $.cookie('userId');
                 $.ajax({
-                    url: baseUrl + "admin/getByName",
+                    url: baseUrl + "admin/getById",
                     type: "get",
                     dataType: "json",
-                    data: {userName: name},
+                    data: {userId: id},
                     success: function (data) {
                         if (data.status === 200 && data.responseMap.result.authority === true) {
                             /*是管理员*/

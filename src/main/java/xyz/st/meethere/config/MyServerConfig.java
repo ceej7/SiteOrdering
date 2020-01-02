@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -23,24 +22,22 @@ public class MyServerConfig implements ApplicationListener<WebServerInitializedE
     * 让自动注入先于构造函数中的调用
     * */
 //    @Autowired
-    public MyServerConfig(Environment environment) {
-//        port = environment.getProperty("local.server.port");
-//        logger.info("port: " + port);
-//        port="8080";
+    public MyServerConfig() {
         try {
             server = InetAddress.getLocalHost().getHostAddress();
             if (server.startsWith("192.168"))
                 server = "localhost";
-            logger.info("server ip address: " + server);
+            logger.info(String.format("--------------------------------------server ip address: %s", server));
         } catch (UnknownHostException e) {
             logger.error(e.getMessage(),e);
             server = "localhost";
         }
+//        server="47.101.217.16";
     }
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
         port = String.valueOf(webServerInitializedEvent.getWebServer().getPort());
-        logger.info("port: " + port);
+        logger.info(String.format("------------------------------------------port: %s", MyServerConfig.port));
     }
 }

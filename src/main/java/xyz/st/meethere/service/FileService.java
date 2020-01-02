@@ -2,14 +2,12 @@ package xyz.st.meethere.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.system.ApplicationHome;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.st.meethere.config.MyWebMvcConfig;
 import xyz.st.meethere.exception.FileException;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
@@ -37,9 +35,9 @@ public class FileService {
             File dir = new File(uploadPath);
             if (!dir.exists()){
                 if (dir.mkdir()) {
-                    logger.info("创建文件上传目录成功" + uploadPath);
+                    logger.info(String.format("创建文件上传目录成功%s", uploadPath));
                 }else {
-                    logger.warn("创建文件上传目录失败" + uploadPath);
+                    logger.warn(String.format("创建文件上传目录失败%s", uploadPath));
                 }
             }
             SimpleDateFormat simpleDateFormat;
@@ -49,9 +47,9 @@ public class FileService {
             Date date = new Date();
             String str = simpleDateFormat.format(date);
             Random random = new Random();
-            int img_ran = random.nextInt() * (99999 - 10000 + 1) + 10000;// 获取5位随机数
+            int imgRan = random.nextInt() * (99999 - 10000 + 1) + 10000;// 获取5位随机数
 
-            String intervalName = img_ran + "" + str;
+            String intervalName = imgRan + "" + str;
             fileName = uploadPath + intervalName +fileName;
             logger.info("uploadPath: " + uploadPath);
             logger.info("filename: " + fileName);

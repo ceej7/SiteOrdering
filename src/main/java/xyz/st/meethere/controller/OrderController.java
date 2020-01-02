@@ -58,15 +58,6 @@ public class OrderController {
      * */
     @PostMapping("/order/match")
     @ApiOperation("通过搜索内容获取订单")
-//    没啥用
-    @ApiParam(
-            examples = @Example(value = {
-                    @ExampleProperty(value = "{\"match\": \"time: 2019-12-23\"}"),
-                    @ExampleProperty(value = "{\"match\": \"uid: 1\"}"),
-                    @ExampleProperty(value = "{\"match\": \"gid: 1\"}"),
-                    @ExampleProperty(value = "{\"match\": \"\"}")
-            })
-    )
     ResponseMsg getOrderByTimeMatch(@RequestBody Map<String,String> params) {
         String searchParam = params.get("match");
         if (searchParam.equals("")) {
@@ -76,26 +67,27 @@ public class OrderController {
             String[] ids = param.split(",");
             ResponseMsg responseMsg = new ResponseMsg();
             responseMsg.setStatus(200);
-            ArrayList<List<PreOrder>> retGround = new ArrayList<>();
+            ArrayList<PreOrder> retOrder = new ArrayList<>();
             for (String id : ids) {
-                retGround.add(orderService.getGroundOrders(Integer.valueOf(id.trim())));
+//                FIXME: 返回的内容应该是一层的数组
+                retOrder.addAll(orderService.getGroundOrders(Integer.valueOf(id.trim())));
             }
-            if (retGround.size() == 0)
+            if (retOrder.size() == 0)
                 responseMsg.setStatus(404);
-            responseMsg.getResponseMap().put("result", retGround);
+            responseMsg.getResponseMap().put("result", retOrder);
             return responseMsg;
         } else if (searchParam.startsWith("uid:")) {
             String param = searchParam.split(":")[1];
             String[] ids = param.split(",");
             ResponseMsg responseMsg = new ResponseMsg();
             responseMsg.setStatus(200);
-            ArrayList<List<PreOrder>> retGround = new ArrayList<>();
+            ArrayList<PreOrder> retOrder = new ArrayList<>();
             for (String id : ids) {
-                retGround.add(orderService.getAllPreOrdersOfUser(Integer.valueOf(id.trim())));
+                retOrder.addAll(orderService.getAllPreOrdersOfUser(Integer.valueOf(id.trim())));
             }
-            if (retGround.size() == 0)
+            if (retOrder.size() == 0)
                 responseMsg.setStatus(404);
-            responseMsg.getResponseMap().put("result", retGround);
+            responseMsg.getResponseMap().put("result", retOrder);
             return responseMsg;
         } else if (searchParam.startsWith("time:")){
             String time = searchParam.split(":")[1].trim();
@@ -130,7 +122,7 @@ public class OrderController {
 
     @ApiOperation("获取某用户指定订单")
     @GetMapping("/order/user/{userId}/order/{preOrderId}")
-    ResponseMsg getOrderByIdOfUSer(@PathVariable("userId") Integer uid, @PathVariable("orderid") Integer oid) {
+    ResponseMsg getOrderByIdOfUSer(@PathVariable("userId") Integer uid, @PathVariable("preOrderId") Integer oid) {
         // fixme: 返回的内容里应该有userName,groundName
         PreOrder preOrder = orderService.getPreOrder(uid, oid);
         ResponseMsg responseMsg = new ResponseMsg();
@@ -149,7 +141,8 @@ public class OrderController {
             @RequestParam("groundId") Integer gid,
             @PathVariable("userId") Integer uid,
             @RequestParam("startTime") String startTime,
-            @RequestParam("duration") Integer duration
+            @RequestParam("duration") Integer duration,
+            @RequestParam("userNum") Integer userNum
     ) {
         ResponseMsg responseMsg = new ResponseMsg();
         if (orderService.validatePreOrder(gid, startTime, duration)) {
@@ -161,7 +154,10 @@ public class OrderController {
         preOrder.setUserId(uid);
         preOrder.setStartTime(startTime);
         preOrder.setDuration(duration);
+        preOrder.setUserNum(userNum);
         preOrder.setPrice(duration * orderService.getGroundPrice(gid));
+        preOrder.setPayed(0);
+        preOrder.setChecked(0);
         if (orderService.addPreOrder(preOrder) == 1) {
             responseMsg.setStatus(200);
             responseMsg.getResponseMap().put("result", preOrder);
@@ -177,7 +173,8 @@ public class OrderController {
             @RequestParam("groundId") Integer gid,
             @PathVariable("userId") Integer uid,
             @RequestParam("startTime") String startTime,
-            @RequestParam("duration") Integer duration
+            @RequestParam("duration") Integer duration,
+            @RequestParam("userNum") Integer userNum
     ) {
         ResponseMsg responseMsg = new ResponseMsg();
         if (orderService.validatePreOrder(gid, startTime, duration)) {
@@ -189,6 +186,7 @@ public class OrderController {
         preOrder.setUserId(uid);
         preOrder.setStartTime(startTime);
         preOrder.setDuration(duration);
+        preOrder.setUserNum(userNum);
         preOrder.setPrice(duration * orderService.getGroundPrice(gid));
         //确保订单生效
         preOrder.setPayed(1);
@@ -214,7 +212,7 @@ public class OrderController {
     }
 
     @ResponseBody
-    @ApiOperation("通过preOrderId批量删除新闻")
+    @ApiOperation("通过preOrderId批量删除订单")
     @DeleteMapping("/order/deleteByBatch")
     ResponseMsg deleteOrderByBatch(@RequestBody Map<String,List<Integer>> data) {
         ResponseMsg msg = new ResponseMsg();
@@ -223,8 +221,9 @@ public class OrderController {
         ResponseMsg tempMsg;
         for (Integer id : ids) {
             tempMsg = deleteOrder(id);
-            if (tempMsg.getStatus() == 404 && msg.getStatus() != 404){
-                msg.setStatus(404);
+            if (tempMsg.getStatus() == 500 && msg.getStatus() != 500){
+                msg.setStatus(500);
+                return msg;
             }
         }
         msg.setStatus(200);
@@ -258,6 +257,33 @@ public class OrderController {
         return responseMsg;
     }
 
+    @ApiOperation("更新订单信息")
+    @PutMapping("/order")
+    ResponseMsg updateOrderInfo(@RequestBody PreOrder order) {
+        ResponseMsg responseMsg = new ResponseMsg();
+
+        if (order.getUserNum() == 0 || order.getPreOrderId() == 0) {
+            responseMsg.setStatus(400);
+            return responseMsg;
+        }
+
+        PreOrder newOrder = orderService.getPreOrderById(order.getPreOrderId());
+        if (newOrder == null) {
+            responseMsg.setStatus(404);
+            return responseMsg;
+        }
+//        当前只有修改使用人数的需求 这里就写一个 如果以后要加在这里加就行
+        newOrder.setUserNum(order.getUserNum());
+
+        int result = orderService.updatePreOrder(newOrder);
+        if (result == 1)
+            responseMsg.setStatus(200);
+        else
+            responseMsg.setStatus(500);
+        responseMsg.getResponseMap().put("result", newOrder);
+        return responseMsg;
+    }
+
     //管理员用接口
     @ApiOperation("获取所有未审核订单")
     @GetMapping("/order/uncheckedOrder")
@@ -287,7 +313,7 @@ public class OrderController {
 
     @ApiOperation("将指定订单审核状态标记为未通过")
     @PutMapping("/order/uncheck/{preOrderId}")
-    ResponseMsg uncheckOrder(@PathVariable("preOrderId") Integer pid) {
+     ResponseMsg uncheckOrder(@PathVariable("preOrderId") Integer pid) {
         ResponseMsg responseMsg = new ResponseMsg();
         if (!orderService.checkPreOrderExistence(pid)) {
             responseMsg.setStatus(404);

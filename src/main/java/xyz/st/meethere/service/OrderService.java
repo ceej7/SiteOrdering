@@ -1,6 +1,5 @@
 package xyz.st.meethere.service;
 
-import io.swagger.models.auth.In;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,6 @@ import xyz.st.meethere.mapper.OrderMapper;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -29,8 +27,11 @@ public class OrderService {
         return orderMapper.getAPreOrderOfUser(uid, oid);
     }
 
+    public PreOrder getPreOrderById(Integer id) {
+        return orderMapper.getPreOrderByPid(id);
+    }
+
     public List<PreOrder> getPreOrderByTimeMatch(String time){
-        System.out.println(time + " 00:00:00.000");
         Timestamp startTime = Timestamp.valueOf(time + " 00:00:00");
         Timestamp endTime = Timestamp.valueOf(time + " 23:59:59");
         return orderMapper.getPreOrderBetweenTimeDuration(startTime,endTime);
@@ -41,13 +42,17 @@ public class OrderService {
         return orderMapper.addPreOrder(preOrder);
     }
 
+    public int updatePreOrder(PreOrder preOrder) {
+//        更新订单不修改订单时间
+        return orderMapper.updatePreOrder(preOrder);
+    }
+
     public int deletePreOrder(Integer oid) {
         return orderMapper.deletePreOrder(oid);
     }
 
     public List<PreOrder> getGroundOrders(Integer gid) {
-        List<PreOrder> orders = orderMapper.getPreOrdersByGroundId(gid);
-        return orders;
+        return orderMapper.getPreOrdersByGroundId(gid);
     }
 
     public boolean checkGroundExistence(Integer gid) {
@@ -72,6 +77,7 @@ public class OrderService {
         } catch (ParseException e) {
             logger.error(e.getMessage(), e);
         }
+        assert date != null;
         calendar.setTime(date);
         calendar.add(Calendar.HOUR_OF_DAY, duration);
         Date dateAfter = calendar.getTime();
@@ -106,12 +112,7 @@ public class OrderService {
         ArrayList<String> orderTimes = new ArrayList<>();
         ArrayList<Integer> durations = new ArrayList<>();
         List<PreOrder> preOrders = orderMapper.getPreOrdersByGroundId(gid);
-        Collections.sort(preOrders, new Comparator<PreOrder>() {
-            @Override
-            public int compare(PreOrder o1, PreOrder o2) {
-                return o1.getStartTime().compareTo(o2.getStartTime());
-            }
-        });
+        Collections.sort(preOrders, (o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         boolean flag = false;
         for (PreOrder preOrder : preOrders) {
             if (!flag) {

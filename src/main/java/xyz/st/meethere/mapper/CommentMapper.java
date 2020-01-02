@@ -1,10 +1,8 @@
 package xyz.st.meethere.mapper;
 
-import io.swagger.models.auth.In;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 import xyz.st.meethere.entity.Comment;
-import xyz.st.meethere.entity.Ground;
 
 import java.util.List;
 
@@ -19,6 +17,11 @@ public interface CommentMapper {
             "(comment join user on comment.userId=user.userId) JOIN ground on ground.groundId=comment.groundId where " +
             "comment.groundId=#{groundId}")
     List<Comment> getCommentsByGroundId(Integer groundId);
+
+    @Select("select comment.userId, comment.groundId, groundName, userName, commentId, date, content, checked from " +
+            "(comment join user on comment.userId=user.userId) JOIN ground on ground.groundId=comment.groundId where " +
+            "comment.groundId=#{groundId} and checked=1")
+    List<Comment> getCheckedCommentsByGroundId(Integer groundId);
 
     @Select("select comment.userId, comment.groundId, groundName, userName, commentId, date, content, checked from " +
             "(comment join user on comment.userId=user.userId) JOIN ground on ground.groundId=comment.groundId where " +
@@ -61,6 +64,7 @@ public interface CommentMapper {
     @Select("select * from comment where checked=1")
     List<Comment> getAllCheckedComments();
 
-    @Select("select * from comment")
+    @Select("select comment.userId, comment.groundId, groundName, userName, commentId, date, content, checked from " +
+            "(comment join user on comment.userId=user.userId) join ground on ground.groundId=comment.groundId")
     List<Comment> getAllComments();
 }

@@ -1,7 +1,8 @@
 package xyz.st.meethere.controller;
 
 import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import xyz.st.meethere.entity.ResponseMsg;
@@ -20,10 +21,14 @@ import java.util.Map;
 public class UserController {
     private final UserService userService;
     private final FileService fileService;
+    private final MailService mailService;
 
-    public UserController(UserService userService, FileService fileService) {
+    Logger logger = LoggerFactory.getLogger(getClass());
+
+    public UserController(UserService userService, FileService fileService, MailService mailService) {
         this.userService = userService;
         this.fileService = fileService;
+        this.mailService = mailService;
     }
 
     @ResponseBody
@@ -85,7 +90,6 @@ public class UserController {
     @ApiOperation("通过email userName password注册")
     @PutMapping("/user/register")
     ResponseMsg registerUser(@RequestBody Map params) {
-        System.out.println("executed");
         ResponseMsg msg = new ResponseMsg();
         msg.setStatus(404);
         if (!(params.containsKey("email") && params.containsKey("userName") && params.containsKey("password"))) {
@@ -121,6 +125,7 @@ public class UserController {
     ResponseMsg deleteUser(@RequestBody Map<String, List<Integer>> params) {
         ResponseMsg msg = new ResponseMsg();
         msg.setStatus(200);
+//        FIXME: 这里的参数名称和/ground/deleteByBatch不一致("ids")
         List<Integer> ids = params.get("userId");
         ResponseMsg tempMsg;
         for (Integer id : ids) {
@@ -129,7 +134,6 @@ public class UserController {
                 msg.setStatus(404);
             }
         }
-        msg.setStatus(200);
         return msg;
     }
 
@@ -137,10 +141,11 @@ public class UserController {
     @ResponseBody
     @ApiOperation("发送邮件给email，用户userName")
     @GetMapping("/user/email")
+//    FIXME: 返回值没有使用
     ResponseMsg emailUser(@RequestParam("email") String email, @RequestParam("userName") String userName) {
         ResponseMsg msg = new ResponseMsg();
         msg.setStatus(404);
-        boolean emailStatus = new MailService().sendmail(email, userName);
+        boolean emailStatus = mailService.sendmail(email, userName);
         if (emailStatus) {
             msg.setStatus(200);
         }
@@ -150,38 +155,23 @@ public class UserController {
     @ResponseBody
     @ApiOperation("修改用户信息，使用userId识别用户")
     @PostMapping("/user/updateById")
-    ResponseMsg updateById(@RequestBody Map<String, Integer> params) {
+    ResponseMsg updateById(@RequestBody Map params) {
         ResponseMsg msg = new ResponseMsg();
 //        FIXME: 参数传递错误应该返回400
         msg.setStatus(400);
-        if (!(params.containsKey("userId"))) {
+        if (
+                (!(params.containsKey("userId")) || !(params.containsKey("password")))
+                        &&
+                        (!(params.containsKey("userId")) || !(params.containsKey("email")) || !(params.containsKey(
+                                "description")))
+        ) {
             return msg;
         }
-        User user = userService.getUserById(params.get("userId"));
+        User user = userService.getUserById(Integer.parseInt((params.get("userId").toString())));
         if (user == null) {
             msg.setStatus(404);
             return msg;
         }
-        user.updateUser(params);
-        int ret = userService.updateUserByModel(user);
-        if (ret > 0) {
-            msg.setStatus(200);
-            msg.getResponseMap().put("user", user);
-        }
-        return msg;
-    }
-
-    @ResponseBody
-    @ApiOperation("修改用户信息，使用userName识别用户")
-    @PostMapping("/user/updateByName")
-    ResponseMsg updateByName(@RequestBody Map params) {
-        ResponseMsg msg = new ResponseMsg();
-        msg.setStatus(404);
-        if (!(params.containsKey("userName"))) {
-            return msg;
-        }
-        User user = userService.getUserByName((String) params.get("userName"));
-        if (user == null) return msg;
         user.updateUser(params);
         int ret = userService.updateUserByModel(user);
         if (ret > 0) {
@@ -205,7 +195,7 @@ public class UserController {
         try {
             storeFile = fileService.storeFile(file);
         } catch (FileException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         assert storeFile != null;
         int result = userService.updateUserProfilePicByUserId(storeFile, id);

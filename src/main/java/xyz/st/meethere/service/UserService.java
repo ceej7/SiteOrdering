@@ -2,7 +2,6 @@ package xyz.st.meethere.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.system.ApplicationHome;
 import org.springframework.stereotype.Service;
 import xyz.st.meethere.config.MyServerConfig;
@@ -14,24 +13,20 @@ import java.util.List;
 
 @Service
 public class UserService {
-    @Autowired
-    private UserMapper userMapper;
+    private final UserMapper userMapper;
 
-    private String server = MyServerConfig.server;
-
-    private String port   = MyServerConfig.port;
-
+    public UserService(UserMapper userMapper) {
+        this.userMapper = userMapper;
+    }
 
     Logger logger = LoggerFactory.getLogger(getClass());
 
     public User getUserByName(String userName) {
-        User user = userMapper.getUserByName(userName);
-        return user;
+        return userMapper.getUserByName(userName);
     }
 
     public User getUserById(int userId) {
-        User user = userMapper.getUserById(userId);
-        return user;
+        return userMapper.getUserById(userId);
     }
 
     public List<User> traverseUser() {
@@ -44,9 +39,7 @@ public class UserService {
 
     public boolean checkUserPassword(String name, String pwd) {
         User user = userMapper.getUserByName(name);
-        if (user != null && user.getPassword().equals(pwd))
-            return true;
-        return false;
+        return user != null && user.getPassword().equals(pwd);
     }
 
     public int addUser(String email, String userName, String password) {
@@ -54,30 +47,30 @@ public class UserService {
         user.setEmail(email);
         user.setUserName(userName);
         user.setPassword(password);
-        User existed_user = userMapper.getUserByNameWOAuthority(userName);
-        if (existed_user != null) return 0;
+        User existedUser = userMapper.getUserByNameWOAuthority(userName);
+        if (existedUser != null) return 0;
         return userMapper.addUser(user);
     }
 
     public int deleteUserById(int userId) {
         /*
-        * 删除用户头像
-        * */
+         * 删除用户头像
+         * */
         String filename = userMapper.getUserById(userId).getProfilePic();
-        filename = new ApplicationHome(getClass()).getSource().getParentFile().getPath() +  filename;
+        filename = new ApplicationHome(getClass()).getSource().getParentFile().getPath() + filename;
         File file = new File(filename);
         if (file.delete()) {
-            logger.info("删除用户头像文件成功，用户id: " + userId);
+            logger.info(String.format("删除用户头像文件成功，用户id: %d", userId));
         } else {
-            logger.warn("删除用户头像文件失败，文件名: " + filename);
+            logger.warn(String.format("删除用户头像文件失败，文件名: %s", filename));
         }
 
         return userMapper.deleteUserById(userId);
     }
 
     public int updateUserByModel(User user) {
-        User existed_user = userMapper.getUserByNameWOAuthority(user.getUserName());
-        if (existed_user != null && existed_user.getUserId() != user.getUserId()) return 0;
+        User existedUser = userMapper.getUserByNameWOAuthority(user.getUserName());
+        if (existedUser != null && existedUser.getUserId() != user.getUserId()) return 0;
         return userMapper.updateUser(user);
     }
 
@@ -85,9 +78,13 @@ public class UserService {
         String[] temp = profilePic.split("/");
 
         // Default server regarded as [localhost]
-        String profile_url=server+":"+port+ "/images/";
-        profile_url = profile_url + temp[temp.length - 1];
-        int result = userMapper.updateUserProfilePicByUserId(userId, profile_url);
+
+//        使用私有变量的时候没有赋上值
+//        改为直接使用MyServerConfig中的static属性
+        String profileUrl = MyServerConfig.server + ":" + MyServerConfig.port + "/images/";
+        logger.info(MyServerConfig.port);
+        profileUrl = profileUrl + temp[temp.length - 1];
+        int result = userMapper.updateUserProfilePicByUserId(userId, profileUrl);
         if (result == 1)
             return 200;
         else
