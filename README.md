@@ -4,7 +4,7 @@
 - 前端开发：袁非凡、曹威杰
 - 后端开发：郭省吾、罗竣夫
 - 测试部分：
-  - 单元：郭省吾
+  - 单元：郭省吾 - 包括静态和覆盖度
   - 系统：罗竣夫
   - 集成：罗竣夫
   - 性能：曹威杰
@@ -15,13 +15,18 @@
   - Springboot
 - Frontend
   - Layui
+- User Account
+  - userName: user001/password:1
+- Admin Account
+  - userName: admin001/password:1
 ## Navigation
-- [source code](https://github.com/HatsuneMK00/SiteOrdering/tree/master/src/main/java)
-- [unit testing code](https://github.com/HatsuneMK00/SiteOrdering/tree/master/src/test)
-- [testing converage](https://github.com/HatsuneMK00/SiteOrdering/tree/master/覆盖度部分)
-- [integration testing](https://github.com/HatsuneMK00/SiteOrdering/tree/master/接口测试部分)
-- [system testing](https://github.com/HatsuneMK00/SiteOrdering/tree/master/系统测试部分)
-- [performance testing](https://github.com/HatsuneMK00/SiteOrdering/tree/master/性能测试部分)
+- [Source code](https://github.com/HatsuneMK00/SiteOrdering/tree/master/src/main/java)
+- [Unit testing code](https://github.com/HatsuneMK00/SiteOrdering/tree/master/src/test)
+- [Testing converage](https://github.com/HatsuneMK00/SiteOrdering/tree/master/覆盖度部分)
+- [Static analysis](https://github.com/HatsuneMK00/SiteOrdering/tree/master/静态分析部分)
+- [Integration testing](https://github.com/HatsuneMK00/SiteOrdering/tree/master/接口测试部分)
+- [System testing](https://github.com/HatsuneMK00/SiteOrdering/tree/master/系统测试部分)
+- [Performance testing](https://github.com/HatsuneMK00/SiteOrdering/tree/master/性能测试部分)
 
 
 <!-- ## doc
